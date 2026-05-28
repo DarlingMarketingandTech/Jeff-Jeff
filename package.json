@@ -1,0 +1,25 @@
+{
+  "name": "jeff-jeff",
+  "version": "1.0.0",
+  "description": "Jeff-only internal scheduling and messaging app foundation.",
+  "main": "src/server.js",
+  "scripts": {
+    "test": "node --test",
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "lint": "node --check src/**/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DarlingMarketingandTech/Jeff-Jeff.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/DarlingMarketingandTech/Jeff-Jeff/issues"
+  },
+  "homepage": "https://github.com/DarlingMarketingandTech/Jeff-Jeff#readme",
+  "private": true
+}
