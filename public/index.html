@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jeff Internal App</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Inter, system-ui, -apple-system, sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 1rem;
+        background: #0f172a;
+        color: #e2e8f0;
+      }
+      .layout {
+        display: grid;
+        gap: 1rem;
+      }
+      .card {
+        border: 1px solid #334155;
+        border-radius: 10px;
+        padding: 1rem;
+        background: #1e293b;
+      }
+      input,
+      button,
+      textarea {
+        width: 100%;
+        margin-top: 0.4rem;
+        margin-bottom: 0.8rem;
+        padding: 0.6rem;
+        border-radius: 8px;
+        border: 1px solid #475569;
+        background: #0f172a;
+        color: #e2e8f0;
+      }
+      button {
+        cursor: pointer;
+        background: #2563eb;
+        border: none;
+      }
+      pre {
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Jeff Internal App</h1>
+    <p>Fast, simple, and ready for phase-1 internal workflow testing.</p>
+    <div class="layout">
+      <section class="card">
+        <h2>Login</h2>
+        <input id="username" placeholder="Username (default: jeff)" />
+        <input id="password" type="password" placeholder="Password (default: chill-mode)" />
+        <button id="login">Get Token</button>
+      </section>
+      <section class="card">
+        <h2>Schedule</h2>
+        <input id="clientName" placeholder="Client name" />
+        <input id="start" placeholder="Start (ISO date-time)" />
+        <input id="end" placeholder="End (ISO date-time)" />
+        <textarea id="notes" placeholder="Notes"></textarea>
+        <button id="createSchedule">Create Schedule Entry</button>
+        <button id="listSchedule">List Schedule</button>
+      </section>
+      <section class="card">
+        <h2>Messages</h2>
+        <input id="contactName" placeholder="Contact name" />
+        <textarea id="body" placeholder="Message body"></textarea>
+        <button id="sendMessage">Send Message</button>
+        <button id="listMessages">List Messages</button>
+      </section>
+      <section class="card">
+        <h2>API Output</h2>
+        <pre id="output">Ready.</pre>
+      </section>
+    </div>
+    <script>
+      let token = '';
+      const output = document.getElementById('output');
+      const setOutput = (value) => (output.textContent = JSON.stringify(value, null, 2));
+
+      async function callApi(path, method, payload) {
+        const response = await fetch(path, {
+          method,
+          headers: {
+            'content-type': 'application/json',
+            ...(token ? { authorization: 'Bearer ' + token } : {}),
+          },
+          body: payload ? JSON.stringify(payload) : undefined,
+        });
+        return response.json();
+      }
+
+      document.getElementById('login').onclick = async () => {
+        const body = {
+          username: document.getElementById('username').value || 'jeff',
+          password: document.getElementById('password').value || 'chill-mode',
+        };
+        const result = await callApi('/api/login', 'POST', body);
+        token = result.token || '';
+        setOutput(result);
+      };
+
+      document.getElementById('createSchedule').onclick = async () => {
+        const result = await callApi('/api/schedule', 'POST', {
+          clientName: document.getElementById('clientName').value,
+          start: document.getElementById('start').value,
+          end: document.getElementById('end').value,
+          notes: document.getElementById('notes').value,
+        });
+        setOutput(result);
+      };
+
+      document.getElementById('listSchedule').onclick = async () => {
+        const result = await callApi('/api/schedule', 'GET');
+        setOutput(result);
+      };
+
+      document.getElementById('sendMessage').onclick = async () => {
+        const result = await callApi('/api/messages', 'POST', {
+          contactName: document.getElementById('contactName').value,
+          body: document.getElementById('body').value,
+        });
+        setOutput(result);
+      };
+
+      document.getElementById('listMessages').onclick = async () => {
+        const result = await callApi('/api/messages', 'GET');
+        setOutput(result);
+      };
+    </script>
+  </body>
+</html>

@@ -1,11 +1,59 @@
-<div align="center">
+# Jeff-Jeff (Phase 1)
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+Single-user internal app foundation for Jeff to manage scheduling and communication quickly.
 
-  <h1>Built with AI Studio</h2>
+## What this includes
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+- Fast Node.js API with no external runtime dependencies
+- Simple internal web UI at `/` for quick testing
+- Single-user login/token flow
+- Modular domain structure:
+  - `auth`
+  - `permissions`
+  - `schedule`
+  - `messages`
+- JSON-backed data store at `/data/store.json`
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+## Quick start
 
-</div>
+```bash
+npm install
+npm run start
+```
+
+Open: `http://localhost:3000`
+
+Default login credentials:
+
+- Username: `jeff`
+- Password: `chill-mode`
+
+Override with env vars:
+
+- `JEFF_USER`
+- `JEFF_PASS`
+- `JEFF_INTERNAL_TOKEN`
+- `PORT`
+
+## Scripts
+
+- `npm run start` – run server
+- `npm run dev` – run with file watch
+- `npm run lint` – syntax check JS files
+- `npm test` – run tests
+
+## API endpoints
+
+- `POST /api/login`
+- `GET /api/schedule`
+- `POST /api/schedule`
+- `PATCH /api/schedule/:id`
+- `GET /api/messages`
+- `POST /api/messages`
+
+All endpoints except login require an `Authorization` header containing the bearer token from `/api/login`.
+
+## Roadmap alignment
+
+This repository is intentionally focused on **phase 1 internal-only use**.
+Future phase: separate client-facing website (login, scheduling, communication) that does not expose internal controls.
