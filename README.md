@@ -35,6 +35,8 @@ Override with env vars:
 - `JEFF_INTERNAL_TOKEN`
 - `PORT`
 
+In production (`NODE_ENV=production`), set `JEFF_PASS` and `JEFF_INTERNAL_TOKEN` explicitly.
+
 ## Scripts
 
 - `npm run start` – run server

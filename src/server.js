@@ -5,9 +5,20 @@ import { validateCredentials, issueToken, parseToken } from './domains/auth.js';
 import { getRoleCapabilities, hasCapability } from './domains/permissions.js';
 import { createSchedule, getSchedule, patchSchedule } from './domains/schedule.js';
 import { getMessages, sendMessage } from './domains/messages.js';
+import { AppError } from './errors.js';
 
 const port = Number(process.env.PORT ?? 3000);
 const publicDirectory = path.resolve(process.cwd(), 'public');
+const maxBodySize = 1_000_000;
+const indexHtml = fs.readFileSync(path.join(publicDirectory, 'index.html'), 'utf8');
+
+if (process.env.NODE_ENV !== 'production') {
+  if (!process.env.JEFF_PASS || !process.env.JEFF_INTERNAL_TOKEN) {
+    process.stdout.write(
+      'Warning: using local default auth values. Set JEFF_PASS and JEFF_INTERNAL_TOKEN to override.\n',
+    );
+  }
+}
 
 function replyJson(res, statusCode, payload) {
   res.writeHead(statusCode, { 'content-type': 'application/json; charset=utf-8' });
@@ -37,12 +48,26 @@ function isAuthorized(req, capability) {
 
 function parseBody(req) {
   return new Promise((resolve, reject) => {
+    const contentLength = Number(req.headers['content-length'] ?? 0);
+    if (Number.isFinite(contentLength) && contentLength < 0) {
+      reject(new AppError('Invalid content-length header.'));
+      return;
+    }
+
+    if (Number.isFinite(contentLength) && contentLength > maxBodySize) {
+      reject(new AppError('Request body too large.', 413));
+      return;
+    }
+
     let body = '';
     req.on('data', (chunk) => {
-      body += chunk;
-      if (body.length > 1_000_000) {
-        reject(new Error('Request body too large.'));
+      if (body.length + chunk.length > maxBodySize) {
+        reject(new AppError('Request body too large.', 413));
+        req.destroy();
+        return;
       }
+
+      body += chunk;
     });
     req.on('end', () => {
       if (!body) {
@@ -53,17 +78,15 @@ function parseBody(req) {
       try {
         resolve(JSON.parse(body));
       } catch (error) {
-        reject(new Error('Invalid JSON payload.'));
+        reject(new AppError('Invalid JSON payload.'));
       }
     });
   });
 }
 
 function serveIndex(res) {
-  const filePath = path.join(publicDirectory, 'index.html');
-  const html = fs.readFileSync(filePath, 'utf8');
   res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-  res.end(html);
+  res.end(indexHtml);
 }
 
 const server = http.createServer(async (req, res) => {
@@ -94,9 +117,18 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
+      const from = url.searchParams.get('from');
+      const to = url.searchParams.get('to');
+      if (from && Number.isNaN(Date.parse(from))) {
+        throw new AppError('from must be an ISO-8601 date-time string.');
+      }
+      if (to && Number.isNaN(Date.parse(to))) {
+        throw new AppError('to must be an ISO-8601 date-time string.');
+      }
+
       const schedule = getSchedule({
-        from: url.searchParams.get('from') ?? undefined,
-        to: url.searchParams.get('to') ?? undefined,
+        from: from ?? undefined,
+        to: to ?? undefined,
       });
       replyJson(res, 200, { schedule });
       return;
@@ -160,8 +192,13 @@ const server = http.createServer(async (req, res) => {
 
     replyNotFound(res);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unexpected server error.';
-    replyJson(res, 400, { error: message });
+    if (error instanceof AppError) {
+      const message = error.expose ? error.message : 'Unexpected server error.';
+      replyJson(res, error.statusCode, { error: message });
+      return;
+    }
+
+    replyJson(res, 500, { error: 'Unexpected server error.' });
   }
 });
 

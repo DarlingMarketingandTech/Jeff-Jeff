@@ -11,4 +11,6 @@ test('issues and parses internal token', () => {
   const token = issueToken('internal');
   assert.deepEqual(parseToken(token), { role: 'internal' });
   assert.equal(parseToken('invalid-token'), null);
+  assert.equal(parseToken('jeff-local-token:'), null);
+  assert.equal(parseToken('jeff-local-token:invalid:extra'), null);
 });

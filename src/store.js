@@ -29,8 +29,11 @@ function writeStore(data) {
 }
 
 function nextId(collection) {
-  const ids = collection.map((item) => item.id ?? 0);
-  return ids.length === 0 ? 1 : Math.max(...ids) + 1;
+  const maxId = collection.reduce((currentMax, item) => {
+    const id = item.id ?? 0;
+    return id > currentMax ? id : currentMax;
+  }, -1);
+  return maxId + 1;
 }
 
 export function listSchedule() {
